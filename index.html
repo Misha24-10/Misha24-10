@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дообучения модели F5-TTS на русский язык</title>
+  <!-- Tailwind CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    audio {
+      width: 100%;
+      height: 40px;
+      border-radius: 5px;
+    }
+    
+    @media (max-width: 640px) {
+      audio {
+        height: 30px;
+      }
+    }
+    
+    audio::-webkit-media-controls-panel {
+      background-color: #f3f4f6;
+    }
+    
+    .audio-container {
+      max-width: 100%;
+      overflow: hidden;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    @media (min-width: 768px) {
+      .audio-container {
+        width: 100%;
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .audio-container {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+
+  <div class="container mx-auto p-6 space-y-8">
+
+    <!-- Warning Message -->
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-yellow-700">
+            Предупреждение: Представленные примеры демонстрируют возможности синтеза речи. Прослушайте аудио предупреждение ниже.
+          </p>
+        </div>
+      </div>
+      <div class="mt-3">
+        <div class="audio-container">
+          <audio controls src="audios/warning.wav" class="w-full" autoplay></audio>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">
+          Технология синтеза речи может быть использована только в законных целях и с согласия лиц, чьи голоса используются. Не используйте синтезированную речь для введения людей в заблуждение или мошенничества.
+        </p>
+      </div>
+    </div>
+
+    <!-- Model Weights Coming Soon Banner -->
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-blue-800">Скоро релиз весов моделей!</h3>
+          <div class="mt-2 text-sm text-blue-700">
+            <p>Веса дообученной модели F5-TTS будут выложены скоро. Следите за обновлениями.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="text-center">
+      <h1 class="text-4xl font-bold mb-2">Дообучения модели F5-TTS на русский язык</h1>
+      <p class="text-lg text-gray-600">Fine-tuned F5‑TTS vs X‑TTS vs FishSpeech на русском языке</p>
+      <div class="mt-4 space-x-4">
+        <a href="https://arxiv.org/abs/2410.06885" target="_blank" class="text-blue-500 hover:underline">Оригинальная статья
+          F5-TTS</a>
+        <a href="https://github.com/SWivid/F5-TTS" target="_blank" class="text-blue-500 hover:underline">F5-TTS GitHub
+          Repo</a>
+      </div>
+    </header>
+
+    <!-- Model Configurations -->
+    <section class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-2xl font-semibold mb-4">Конфигурации моделей</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white">
+          <thead>
+            <tr class="bg-gray-50">
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Модель</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Архитектура</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Данные</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr>
+              <td class="px-4 py-4 whitespace-nowrap font-medium">F5-TTS (Fine-tuned)</td>
+              <td class="px-4 py-4 whitespace-nowrap">Diffusion Transformer</td>
+              <td class="px-4 py-4">
+                <ul class="list-disc pl-5 space-y-1">
+                  <li><span class="font-medium">Предобучение:</span> 95K часов английской и китайской речи (оригинальная модель)</li>
+                  <li><span class="font-medium">Дообучение:</span> 5K часов русской и английской речи:
+                    <ul class="list-circle pl-5 mt-1 space-y-1">
+                      <li>Кастомный русский датасет - 4K часов</li>
+                      <li>Common Voice (RU, EN) - 239 часов</li>
+                      <li>Sova (RuDevices, RuAudiobooksDevices) - 400 часов</li>
+                      <li>Часть Libriheavy - 180 часов</li>
+                    </ul>
+                  </li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-4 whitespace-nowrap font-medium">X-TTS (coqui/XTTS-v2)</td>
+              <td class="px-4 py-4 whitespace-nowrap">Transformer</td>
+              <td class="px-4 py-4">
+                <ul class="list-disc pl-5 space-y-1">
+                  <li>Всего: 27,281 час</li>
+                  <li>Английская речь: 14,513 часов</li>
+                  <li>Русская речь: 147 часов</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-4 whitespace-nowrap font-medium">FishSpeech</td>
+              <td class="px-4 py-4 whitespace-nowrap">Dual Autoregressive (Dual-AR)</td>
+              <td class="px-4 py-4">
+                <ul class="list-disc pl-5 space-y-1">
+                  <li>Всего: 1 миллион часов</li>
+                  <li>Английская речь: 300K часов</li>
+                  <li>Русская речь: ~20K часов</li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+<!-- Model Overview -->
+<section class="bg-white shadow rounded-lg p-6">
+  <h2 class="text-2xl font-semibold mb-4">Обзор модели</h2>
+  <div class="flex justify-center mb-4">
+    <img src="images/f5-tts.png" alt="Model Overview Diagram" class="max-w-md h-auto rounded-lg">
+  </div>
+  <p class="text-gray-700">
+    <strong>F5-TTS</strong> - это неавторегрессионная модель синтеза речи, основанная на механизме Flow Matching с использованием архитектуры Diffusion Transformer (DiT). Модель принимает на вход символьную последовательность, дополненную специальными токенами до длины аудио, и мел-спектрограмму с зашумлёнными и замаскированными фрагментами. Для обработки текста используется ConvNeXt-блок. Генерация выполняется при помощи ODE solver, начиная с шума и постепенно восстанавливая речь.
+  </p>
+</section>
+
+    <!-- Примеры  часть 0 -->
+    <section class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-2xl font-semibold mb-4">Примеры синтеза речи на различных голосах</h2>
+      
+      <!-- Мужские голоса -->
+      <div class="mb-6">
+        <h3 class="text-xl font-semibold mb-3">Мужские голоса</h3>
+
+         <!-- Sample 1 - Male Voice -->
+        <div class="space-y-8">
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Хорошо, скажите, пожалуйста, когда я могу приехать и куда?
+              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/speaker_1.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/speaker_1.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_1.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_1.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample 2 - Male Voice -->
+        <div class="space-y-8">
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Фейковая новость. Две синие галочки в WhatsApp станут равноценны подписи о получении повестки. Россияне вскоре могут начать получать повестки в виде сообщений. В случае, если адресат прочитает сообщение и появятся две синие галочки, повестка будет считаться вручённой под роспись. Решение об отправке триста  тысяч сообщений в мессенджере WhatsApp было принято ещё в конце сентября, на данный момент идут поиски подрядчика, который займётся этой задачей.
+              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/speaker_2.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/speaker_2.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_2.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_2.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample 3 - Male Voice -->
+        <div class="space-y-8">
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Российский искусственный интеллект научился пить водку.<br>
+                В федеральном исследовательском институте «Сколтех» состоялась презентация новой отечественной нейросети «Полугар», которая станет незаменимым помощником россиян в повседневных делах.<br>
+                «В чём-то мы даже превосходим американские и китайские решения. Например, «Полугар» умеет пить водку – напиток вливается в специальную ёмкость, после чего нейронка его перерабатывает. Выпить она может до литра крепенького, потом вырубается», – сказал руководитель проекта Гамлет Лероян.
+              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/speaker_3.mp3"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/speaker_3.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_3.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_3.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample 4 - Male Voice -->
+        <div class="space-y-8">
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Руководитель стартапа DeepSeek Лян Вэньфэн в интервью на YouTube-канале американского блогера Лекса Фридмана рассказал об истории создания своего чат-бота. Оказалось, что основой для самой мощной из существующих на сегодняшний день нейросетей стал программный код советских программистов, написанный в 1985 году.
+              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/speaker_4.mp3"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/speaker_4.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_4.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_4.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sample 5 - Male Voice -->
+        <div class="space-y-8">
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Кафедра польского языка и литературы МГУ прекратила свою работу после того, как весь преподавательский состав в рамках добровольно-принудительной диспансеризации посетил стоматологический кабинет.
+              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/speaker_5.mp3"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/speaker_5.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_5.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_5.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample 6 - Male Voice -->
+        <div class="space-y-8">
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Использование TWS-наушников может привести к серьёзным медицинским проблемам, поскольку они фактически «поджаривают» мозг  об этом объявила команда независимых исследователей из Института биомедицины в Токио.
+              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/speaker_6.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/speaker_6.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_6.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_6.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sample 7 - Male Voice -->
+        <div class="space-y-8">
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                ИА «Панорама».<br>
+                «Это жизнь, всякое бывает»: учёные нашли записи о четвёртом законе Ньютона.<br>
+                «Так, в послании своему ученику Уильяму Уистону, которое Ньютон отправил за полгода до смерти, физик писал: «Дорогой друг, запомни главный закон мироздания  это жизнь, всякое бывает»,  рассказал старший научный сотрудник отдела рукописей музея Роберт Джефферсон.<br>
+              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/speaker_7.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/speaker_7.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_7.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_7.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <br>
+      <!-- Женские голоса -->
+      <div>
+        <h3 class="text-xl font-semibold mb-3">Женские голоса</h3>
+        <div class="space-y-8">
+          <!-- Sample 1 - Female Voice -->
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Хорошо, скажите, пожалуйста, когда я могу приехать и куда?
+
+
+              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/female_1.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/female_1.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_woman_1.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_fem_1.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sample 2 - Female Voice -->
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Фейковая новость. Две синие галочки в WhatsApp станут равноценны подписи о получении повестки. Россияне вскоре могут начать получать повестки в виде сообщений. В случае, если адресат прочитает сообщение и появятся две синие галочки, повестка будет считаться вручённой под роспись. Решение об отправке триста тысяч сообщений в мессенджере WhatsApp было принято ещё в конце сентября, на данный момент идут поиски подрядчика, который займётся этой задачей.
+              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/female_2.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/female_2.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_woman_2.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_fem_2.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sample 3 - Female Voice -->
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Российский искусственный интеллект научился пить водку.<br>
+                В федеральном исследовательском институте «Сколтех» состоялась презентация новой отечественной нейросети «Полугар», которая станет незаменимым помощником россиян в повседневных делах.<br>
+                «В чём-то мы даже превосходим американские и китайские решения. Например, «Полугар» умеет пить водку – напиток вливается в специальную ёмкость, после чего нейронка его перерабатывает. Выпить она может до литра крепенького, потом вырубается», – сказал руководитель проекта Гамлет Лероян.              </p>
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/female_3.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/female_3.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_woman_3.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_fem_3.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sample 4 - Female Voice -->
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Кафедра польского языка и литературы МГУ прекратила свою работу после того, как весь преподавательский состав в рамках добровольно-принудительной диспансеризации посетил стоматологический кабинет.
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/female_4.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/female_4.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_woman_4.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_fem_4.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sample 5 - Female Voice -->
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Да-да-да, я хочу. Вы хотите отправить меня... Почему отправить? Я хочу, чтобы вы пошли на заслуженный отдых, на пенсию. И вы будете... У вас будет много свободного времени. Вы будете...
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/child.mp3"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/child_1.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_woman_5.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_fem_5.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sample 6 - Female Voice -->
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Правительство утвердило финансирование государственной программы «Искусственный интеллект в помощь сельскому жителю» в размере двенадцати миллиардов рублей. В рамках инициативы во всех деревнях, сёлах и станицах России с населением от десяти до двух тысяч пятисот человек установят сенсорные терминалы с искусственным интеллектом.
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/female_6.mp3"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/female_6.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_woman_6.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_fem_6.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sample 7 - Female Voice -->
+          <div>
+            <details class="bg-gray-50 p-3 rounded-lg mb-4">
+              <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+                Текст для генерации (нажмите, чтобы развернуть)
+              </summary>
+              <p class="pt-3 text-gray-700">
+                Серьезно? Не, я не хочу. У меня вообще это... Ну, жутко интересно, Гент, я волосы закорю, конечно. Так, хорошо. А что можно делать этим станком?
+
+            </details>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div class="text-center">
+                <p class="text-sm mb-1">Audio promt</p>
+                <div class="audio-container">
+                  <audio controls src="audios/promts/major/female_7.mp3"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">F5‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/f5-tts/major/female_7.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">X‑TTS</p>
+                <div class="audio-container">
+                  <audio controls src="audios/xtts/major/major_woman_7.wav"></audio>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-sm mb-1">FishSpeech</p>
+                <div class="audio-container">
+                  <audio controls src="audios/fish_sppech/major/gen_fem_7.wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Примеры  часть 2 -->
+    <section class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-2xl font-semibold mb-4">Примеры синтеза речи на датасете Ruslan</h2>
+      <div class="space-y-8">
+
+        <!-- Sample 1 -->
+        <div>
+          <details class="bg-gray-50 p-3 rounded-lg mb-4">
+            <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+              Текст для генерации (нажмите, чтобы развернуть)
+            </summary>
+            <p class="pt-3 text-gray-700">
+              Наконец появилась возможность добраться до интернета, сейчас мы находимся в
+              Панамском канале и здесь есть wifi. Я на судне уже больше месяца и пока я здесь, я писал все интересное что
+              здесь происходит и вот наконец есть возможность этим поделиться. Фотографий пока не будет, их я выложу или
+              позже, или уже когда вернусь домой. Итак, понеслась.
+            </p>
+          </details>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="text-center">
+              <p class="text-sm mb-1">Audio promt</p>
+              <div class="audio-container">
+                <audio controls src="audios/promts/base/000010_RUSLAN.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/base/example_long.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">X‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/xtts/base/example_long.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">FishSpeech</p>
+              <div class="audio-container">
+                <audio controls src="audios/fish_sppech/base/ruslan_1.wav"></audio>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample 2 -->
+        <div>
+          <details class="bg-gray-50 p-3 rounded-lg mb-4">
+            <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+              Текст для генерации (нажмите, чтобы развернуть)
+            </summary>
+            <p class="pt-3 text-gray-700">
+              Как сегодня погода за окном?
+            </p>
+          </details>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="text-center">
+              <p class="text-sm mb-1">Audio promt</p>
+              <div class="audio-container">
+                <audio controls src="audios/promts/base/000010_RUSLAN.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/base/waeter.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">X‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/xtts/base/ruslan_2.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">FishSpeech</p>
+              <div class="audio-container">
+                <audio controls src="audios/fish_sppech/base/ruslan_2.wav"></audio>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Sample 3 -->
+        <div>
+          <details class="bg-gray-50 p-3 rounded-lg mb-4">
+            <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+              Текст для генерации (нажмите, чтобы развернуть)
+            </summary>
+            <p class="pt-3 text-gray-700">
+              Ну что я могу сказать с этими цифрами? С ними всё в порядке, но да, там немного непонятно было. Но я думаю, что ещё мне нужно пару дней и тогда будет всё точно.
+            </p>
+          </details>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="text-center">
+              <p class="text-sm mb-1">Audio promt</p>
+              <div class="audio-container">
+                <audio controls src="audios/promts/base/000751_RUSLAN.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/base/audio_3.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">X‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/xtts/base/ruslan_3.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">FishSpeech</p>
+              <div class="audio-container">
+                <audio controls src="audios/fish_sppech/base/ruslan_3.wav"></audio>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- Примеры  часть 3 -->
+    <section class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-2xl font-semibold mb-4">Примеры синтеза текста с поэзией</h2>
+      <div class="space-y-8">
+
+        <!-- Sample 1 -->
+        <div>
+          <details class="bg-gray-50 p-3 rounded-lg mb-4">
+            <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+              Письмо Татьяны к Онегину (нажмите, чтобы развернуть)
+            </summary>
+            <div class="pt-3 text-gray-700 whitespace-pre-line">
+              <p>
+              Я к вам пишу — чего же боле?
+              Что я могу ещё сказать?
+              Теперь, я знаю, в вашей воле
+              Меня презреньем наказать.
+              Но вы, к моей несчастной доле
+              Хоть каплю жалости храня,
+              Вы не оставите меня.
+              Сначала я молчать хотела;
+              Поверьте: моего стыда
+              Вы не узнали б никогда,
+              Когда б надежду я имела
+              Хоть редко, хоть в неделю раз
+              В деревне нашей видеть вас,
+              Чтоб только слышать ваши речи,
+              Вам слово молвить, и потом
+              Всё думать, думать об одном
+              И день и ночь до новой встречи.
+              Но, говорят, вы нелюдим;
+              В глуши, в деревне всё вам скучно,
+              А мы ничем мы не блестим,
+              Хоть вам и рады простодушно.
+            </p>
+            </div>
+          </details>
+          <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            <div class="text-center">
+              <p class="text-sm mb-1">Audio promt</p>
+              <div class="audio-container">
+                <audio controls src="audios/promts/poerty/onegin.mp3"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS w/o accent</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/onegin_no_accent.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/onegin.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">X‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/xtts/poetry/poetry_1.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">FishSpeech</p>
+              <div class="audio-container">
+                <audio controls src="audios/fish_sppech/poetry/poetry_1.wav"></audio>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample 2 -->
+        <div>
+          <details class="bg-gray-50 p-3 rounded-lg mb-4">
+            <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+              Письмо Татьяны к Онегину (нажмите, чтобы развернуть)
+            </summary>
+            <div class="pt-3 text-gray-700 whitespace-pre-line">
+              <p>
+              Я к вам пишу — чего же боле?
+              Что я могу ещё сказать?
+              Теперь, я знаю, в вашей воле
+              Меня презреньем наказать.
+              Но вы, к моей несчастной доле
+              Хоть каплю жалости храня,
+              Вы не оставите меня.
+              Сначала я молчать хотела;
+              Поверьте: моего стыда
+              Вы не узнали б никогда,
+              Когда б надежду я имела
+              Хоть редко, хоть в неделю раз
+              В деревне нашей видеть вас,
+              Чтоб только слышать ваши речи,
+              Вам слово молвить, и потом
+              Всё думать, думать об одном
+              И день и ночь до новой встречи.
+              Но, говорят, вы нелюдим;
+              В глуши, в деревне всё вам скучно,
+              А мы ничем мы не блестим,
+              Хоть вам и рады простодушно.
+              </p>
+            </div>
+          </details>
+          <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            <div class="text-center">
+              <p class="text-sm mb-1">Audio promt</p>
+              <div class="audio-container">
+                <audio controls src="audios/promts/poerty/oneg_ruslan.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS w/o accent</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/ruslan_no_accent.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/ruslan.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">X‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/xtts/poetry/poetry_2.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">FishSpeech</p>
+              <div class="audio-container">
+                <audio controls src="audios/fish_sppech/poetry/poetry_2.wav"></audio>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Sample 3 -->
+        <div>
+          <details class="bg-gray-50 p-3 rounded-lg mb-4">
+            <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+              GPT (by GPT 4-5) (нажмите, чтобы развернуть)
+            </summary>
+            <div class="pt-3 text-gray-700 whitespace-pre-line">
+              <p>
+              GPT — три буквы, словно мост
+              Меж мыслями и океаном знаний,
+              Слова плетутся ярко, в полный рост,
+              И мир идей доступен без границ и расстояний.
+              
+              Он друг в ночи, помощник среди дня,
+              Учитель терпеливый и поэт,
+              Ответит на вопросы для тебя,
+              В потоках данных он зажжёт нам свет.
+              
+              Его слова точны и глубоки,
+              Но помни: хоть умён он и силён,
+              Его сердца касаются строки,
+              Лишь если в них тепло вложил наш он.
+              
+              И пусть искусственен он по рожденью,
+              Но в диалогах оживает вновь.
+              И в каждом нашем с ним взаимодействии
+              Есть капелька души, и, может быть, любовь.
+              <p>
+            </div>
+          </details>
+          <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            <div class="text-center">
+              <p class="text-sm mb-1">Audio promt</p>
+              <div class="audio-container">
+                <audio controls src="audios/promts/poerty/voice_female_1.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS w/o accent</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/voice_female_1_no_accent.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/voice_female_1.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">X‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/xtts/poetry/poetry_3.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">FishSpeech</p>
+              <div class="audio-container">
+                <audio controls src="audios/fish_sppech/poetry/poetry_3.wav"></audio>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Sample 4 -->
+        <div>
+          <details class="bg-gray-50 p-3 rounded-lg mb-4">
+            <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+              GPT (by GPT 4-5 && <a href="https://t.me/denissexy/9612" target="_blank" class="text-blue-500 hover:underline">Denis Sexy IT</a>) (нажмите, чтобы развернуть)
+            </summary>
+            <div class="pt-3 text-gray-700 whitespace-pre-line">
+              <p>
+              На перекрёстке улиц вечер тих,
+              И фонари укутаны туманом,
+              Там теплится огонь палатки малой —
+              Шаурма дарует сердцу стих.
+              
+              Пылает вертел — словно жизнь,
+              И мясо нежно шепчет соком пряным,
+              Лаваш в руках, завёрнутый кафтаном,
+              Хранит в себе огонь и аромат.
+              
+              Там листья зелени, там свежесть трав,
+              Хрустит капуста, словно снег под шагом,
+              И соус острый, будто бы с размахом
+              Раскрасил мир в палитру ярких глав.
+              
+              Укус к укусу — радость бытия,
+              Простое счастье спрятано в ладонях.
+              Шаурма, как детство на ладонях,
+              Искусство вкуса, света и огня.
+              
+              Забыты все дела, ушла тоска,
+              Пока теплом наполнены мгновенья.
+              Ты даришь сердцу свет и вдохновенье,
+              
+              Обычная, 
+                      великая 
+                             шаурма.
+              </p>
+            </div>
+          </details>
+          <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            <div class="text-center">
+              <p class="text-sm mb-1">Audio promt</p>
+              <div class="audio-container">
+                <audio controls src="audios/promts/poerty/voice_female_2.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS w/o accent</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/saurma_no_accent.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/saurma.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">X‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/xtts/poetry/poetry_4.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">FishSpeech</p>
+              <div class="audio-container">
+                <audio controls src="audios/fish_sppech/poetry/poetry_4.wav"></audio>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample 5 -->
+        <div>
+          <details class="bg-gray-50 p-3 rounded-lg mb-4">
+            <summary class="font-medium cursor-pointer text-blue-600 hover:text-blue-800">
+              Парус — Михаил Лермонтов (нажмите, чтобы развернуть)
+            </summary>
+            <div class="pt-3 text-gray-700 whitespace-pre-line">
+              <p>
+                Белеет парус одинокой
+                В тумане моря голубом!..
+                Что ищет он в стране далекой?
+                Что кинул он в краю родном?..
+                Играют волны — ветер свищет,
+                И мачта гнется и скрипит…
+                Увы! он счастия не ищет,
+                И не от счастия бежит!
+                Под ним струя светлей лазури,
+                Над ним луч солнца золотой…
+                А он, мятежный, просит бури,
+                Как будто в бурях есть покой!
+              </p>
+            </div>
+          </details>
+          <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            <div class="text-center">
+              <p class="text-sm mb-1">Audio promt</p>
+              <div class="audio-container">
+                <audio controls src="audios/promts/poerty/voice_male_1.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS w/o accent</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/voice_male_1_lermont_no_accent.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">F5‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/f5-tts/poetry/voice_male_1_lermont.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">X‑TTS</p>
+              <div class="audio-container">
+                <audio controls src="audios/xtts/poetry/poetry_5.wav"></audio>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm mb-1">FishSpeech</p>
+              <div class="audio-container">
+                <audio controls src="audios/fish_sppech/poetry/poetry_5.wav"></audio>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Footer -->
+    <footer class="text-center text-gray-600 text-sm">
+      &copy; 2025 For research purposes only.
+    </footer>
+
+  </div>
+
+</body>
+
+</html>
