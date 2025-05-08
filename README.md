@@ -18,7 +18,7 @@ The demo showcases the capabilities of speech synthesis models on Russian langua
 
 ## Live Demo
 
-Check out our interactive web demo at: [https://misha24-10.github.io/Misha24-10/](https://misha24-10.github.io/Misha24-10/)
+Check web demo with examples at: [https://misha24-10.github.io/Misha24-10/](https://misha24-10.github.io/Misha24-10/)
 
 ## Model Weights
 
